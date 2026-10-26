@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import host.stjin.anonaddy.R
 import host.stjin.anonaddy.ServiceLocator
 import host.stjin.anonaddy.ui.base.BaseActivity
+import host.stjin.anonaddy.utils.MaterialDialogHelper
 import host.stjin.anonaddy_shared.AddyIoApp
 import host.stjin.anonaddy_shared.managers.SettingsManager
 import host.stjin.anonaddy_shared.models.Aliases
@@ -17,6 +18,13 @@ import host.stjin.anonaddy_shared.network.NetworkResult
 import kotlinx.coroutines.launch
 
 class CreateAliasAssistantActivity : BaseActivity() {
+
+    companion object {
+        // Set by in-process callers (Quick Settings tile) right before launching. Other apps can't touch it,
+        // so their requests always go through the confirmation dialog.
+        @Volatile
+        var skipConfirmationOnce = false
+    }
 
     override val requiresAuthentication: Boolean = false
 
@@ -62,16 +70,41 @@ class CreateAliasAssistantActivity : BaseActivity() {
             ?: uri?.getQueryParameter("local_part")?.takeIf { it.isNotBlank() }
             ?: ""
 
-        Toast.makeText(this, getString(R.string.assistant_creating_alias), Toast.LENGTH_SHORT).show()
-
-        lifecycleScope.launch {
-            createAlias(
-                customDomain = domain,
-                customDescription = description,
-                customFormat = format,
-                customLocalPart = localPart
-            )
+        val create = {
+            Toast.makeText(this, getString(R.string.assistant_creating_alias), Toast.LENGTH_SHORT).show()
+            lifecycleScope.launch {
+                createAlias(
+                    customDomain = domain,
+                    customDescription = description,
+                    customFormat = format,
+                    customLocalPart = localPart
+                )
+            }
         }
+
+        if (skipConfirmationOnce) {
+            skipConfirmationOnce = false
+            create()
+            return
+        }
+
+        // This activity is exported and reachable from browser links, so any app or web page could otherwise
+        // silently create aliases and read the new address back through the activity result.
+        MaterialDialogHelper.showMaterialDialog(
+            context = this,
+            title = getString(R.string.assistant_confirm_create_alias_title),
+            message = getString(R.string.assistant_confirm_create_alias_desc, localPart.ifBlank { "-" }, domain ?: "-", description.ifBlank { "-" }),
+            neutralButtonText = getString(R.string.cancel),
+            neutralButtonAction = {
+                setResult(RESULT_CANCELED)
+                finish()
+            },
+            positiveButtonText = getString(R.string.add),
+            positiveButtonAction = { create() }
+        ).setOnCancelListener {
+            setResult(RESULT_CANCELED)
+            finish()
+        }.show()
     }
 
     private suspend fun createAlias(

@@ -931,6 +931,8 @@
     <string name="assistant_error_creating_alias">Failed to create alias</string>
     <string name="assistant_app_not_setup">Addy.io is not configured. Please open the app first.</string>
     <string name="assistant_creating_alias">Creating alias…</string>
+    <string name="assistant_confirm_create_alias_title">Create a new alias?</string>
+    <string name="assistant_confirm_create_alias_desc">Another app or a link asked addy.io to create an alias.\n\nLocal part: %1$s\nDomain: %2$s\nDescription: %3$s</string>
     <string name="quick_alias">Quick alias</string>
     <string name="quick_alias_desc">Quickly create and copy an alias</string>
     <string name="not_configured">Not logged in</string>
