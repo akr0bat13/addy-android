@@ -63,6 +63,9 @@ class QuickAliasTileService : TileService() {
     }
 
     private fun launchActivityAndCollapse(intent: Intent) {
+        if (intent.component?.className == CreateAliasAssistantActivity::class.java.name) {
+            CreateAliasAssistantActivity.skipConfirmationOnce = true
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val pendingIntent = PendingIntent.getActivity(
                 this,
